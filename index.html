@@ -24,85 +24,88 @@
 
     <script>
         function initMap() {
-  // Create a map object
-  const map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 10,
-  });
+            // Create a map object
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 10,
+            });
 
-  // Get the coordinates and tooltip text from the query string
-  const urlParams = new URLSearchParams(window.location.search);
-  const coordsParam = urlParams.get('coords');
+            // Get the coordinates and tooltip text from the query string
+            const urlParams = new URLSearchParams(window.location.search);
+            const coordsParam = urlParams.get('coords');
 
-  if (coordsParam) {
-    // Split the coordinates string into an array of coordinates and tooltip text
-    const coordPairs = coordsParam.split(';');
-    const coordsArray = [];
-    coordPairs.forEach((coordPair) => {
-      const coords = coordPair.split(',');
-      const latLng = new google.maps.LatLng(parseFloat(coords[0]), parseFloat(coords[1]));
-      const tooltip = coords[2] ? decodeURIComponent(coords[2]) : null;
-      coordsArray.push({ latLng, tooltip });
-    });
-
-    // Get the user's current location
-    navigator.geolocation.getCurrentPosition((position) => {
-      const userLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-
-      // Loop through the coordinates and add a marker with tooltip and travel time for each one
-      const bounds = new google.maps.LatLngBounds();
-      coordsArray.forEach((coord) => {
-        const markerLatLng = coord.latLng;
-
-        // Use the Distance Matrix API to calculate the travel time between the user's location and the marker's location
-        const service = new google.maps.DistanceMatrixService();
-        service.getDistanceMatrix(
-          {
-            origins: [userLatLng],
-            destinations: [markerLatLng],
-            travelMode: google.maps.TravelMode.DRIVING,
-          },
-          (response, status) => {
-            if (status === "OK") {
-              // Get the travel time from the response
-              const travelTime = response.rows[0].elements[0].duration.text;
-
-              // Add the travel time to the marker's tooltip
-              const tooltip = coord.tooltip ? `Amount: ${coord.tooltip}<br />Travel time: ${travelTime}` : `Travel time: ${travelTime}`;
-
-              // Add the marker to the map
-              const marker = new google.maps.Marker({
-                position: markerLatLng,
-                map: map,
-              });
-              bounds.extend(markerLatLng);
-              if (tooltip) {
-                const infowindow = new google.maps.InfoWindow({
-                  content: tooltip,
+            if (coordsParam) {
+                // Split the coordinates string into an array of coordinates and tooltip text
+                const coordPairs = coordsParam.split(';');
+                const coordsArray = [];
+                coordPairs.forEach((coordPair) => {
+                    const coords = coordPair.split(',');
+                    const latLng = new google.maps.LatLng(parseFloat(coords[0]), parseFloat(coords[1]));
+                    const tooltip = coords[2] ? decodeURIComponent(coords[2]) : null;
+                    coordsArray.push({ latLng, tooltip });
                 });
-                marker.addListener("click", () => {
-                  const url = "https://www.google.com/maps/dir/?api=1&destination=" + marker.getPosition().toUrlValue();
-                  window.open(url, "_blank");
+
+                // Get the user's current location
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const userLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+
+                    // Loop through the coordinates and add a marker with tooltip and travel time for each one
+                    const bounds = new google.maps.LatLngBounds();
+                    coordsArray.forEach((coord) => {
+                        const markerLatLng = coord.latLng;
+
+                        // Use the Distance Matrix API to calculate the travel time between the user's location and the marker's location
+                        const service = new google.maps.DistanceMatrixService();
+                        service.getDistanceMatrix(
+                            {
+                                origins: [userLatLng],
+                                destinations: [markerLatLng],
+                                travelMode: google.maps.TravelMode.DRIVING,
+                            },
+                            (response, status) => {
+                                if (status === "OK") {
+                                    // Get the travel time from the response
+                                    const travelTime = response.rows[0].elements[0].duration.text;
+
+                                    // Add the travel time to the marker's tooltip
+                                    const tooltip = coord.tooltip ? `Amount: ${coord.tooltip}<br />Travel time: ${travelTime}` : `Travel time: ${travelTime}`;
+
+                                    // Add the marker to the map
+                                    const marker = new google.maps.Marker({
+                                        position: markerLatLng,
+                                        map: map,
+                                    });
+                                    bounds.extend(markerLatLng);
+                                    if (tooltip) {
+                                        const infowindow = new google.maps.InfoWindow({
+                                            content: tooltip,
+                                        });
+                                        marker.addListener("click", () => {
+                                            const url = "https://www.google.com/maps/dir/?api=1&destination=" + marker.getPosition().toUrlValue();
+                                            window.open(url, "_blank");
+                                        });
+                                        infowindow.open(map, marker);
+                                    }
+                                } else {
+                                    console.log("Error:", status);
+                                }
+
+                                // After adding all the markers, center and zoom the map to fit all the markers
+                                map.fitBounds(bounds);
+                            }
+                        );
+                    });
                 });
-                infowindow.open(map, marker);
-              }
             } else {
-              console.log("Error:", status);
+                // Initialize the map with a default location and zoom
+                map.setCenter({ lat: 50.0647, lng: 19.9450 });
+                map.setZoom(12);
             }
-
-            // After adding all the markers, center and zoom the map to fit all the markers
-            map.fitBounds(bounds);
-          }
-        );
-      });
-    });
-  }
-}
-
+        }
     </script>
 
     <!-- Load the Google Maps JavaScript API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap"
-        async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap" async
+        defer></script>
 </body>
 
 </html>
